@@ -1,0 +1,16 @@
+dependencies {
+
+    implementation(project(":${projectName}-domain"))
+
+    implementation group: 'org.apache.commons', name: 'commons-email', version: '1.5'
+
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
+    implementation group: 'org.springframework', name: 'spring-webmvc', version: "$springVersion"
+    implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
+
+    implementation group: 'org.springframework', name: 'spring-webmvc', version: "$springVersion"
+    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: "$okhttpVersion"
+    implementation "com.squareup.retrofit2:retrofit:$retrofitVersion"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofitVersion"
+    implementation "com.squareup.retrofit2:converter-scalars:$retrofitVersion"
+}

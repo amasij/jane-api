@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group 'com.bw'
+version '0.0.1-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: "${project.rootDir}/model", include: ['*.jar'])
+    implementation group: 'org.springframework.data', name: 'spring-data-jpa', version: '2.0.9.RELEASE'
+    implementation group: 'org.hibernate.javax.persistence', name: 'hibernate-jpa-2.1-api', version: '1.0.2.Final'
+    testImplementation(project(":${projectName}-test-starter"))
+    implementation("org.hibernate:hibernate-core:5.2.17.Final")
+    // https://mvnrepository.com/artifact/org.javers/javers-spring-boot-starter-sql
+    implementation group: 'org.javers', name: 'javers-spring-boot-starter-sql', version: '6.2.3'
+    implementation group: 'com.querydsl', name: 'querydsl-jpa', version: "$queryDslVersion"
+    implementation group: 'com.querydsl', name: 'querydsl-core', version: "$queryDslVersion"
+}

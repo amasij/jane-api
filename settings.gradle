@@ -1,1 +1,11 @@
-rootProject.name = 'demo'
+rootProject.name = 'jane'
+
+include "${projectName}-domain",
+        "${projectName}-dao",
+        "${projectName}-test-starter",
+        "${projectName}-service",
+        "${projectName}-service-impl",
+        "${projectName}-integration",
+        "${projectName}-integration-impl",
+        "${projectName}-infrastructure",
+        "${projectName}-controller"

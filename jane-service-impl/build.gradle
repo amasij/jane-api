@@ -1,0 +1,76 @@
+apply plugin: 'jacoco'
+jacoco {
+    toolVersion = '0.8.2'
+}
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+dependencies {
+
+    implementation(project(":${projectName}-dao")) {
+//        exclude module: "querydsl-jpa"
+        exclude module: "hibernate-jpa-2.1-api"
+//        exclude module: "spring-context"
+        exclude module: "spring-beans"
+        exclude module: "spring-tx"
+    }
+    implementation(project(":${projectName}-domain"))
+    implementation fileTree(dir: "${project.rootDir}/model", include: ['*.jar'])
+    implementation group: 'org.springframework.data', name: 'spring-data-jpa', version: "$springDataVersion"
+
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "$springBootVersion"
+    implementation(project(":${projectName}-service"))
+
+    implementation "javax.transaction:javax.transaction-api:1.2"
+
+    implementation("org.hibernate:hibernate-core:5.2.17.Final")
+
+    implementation group: 'com.querydsl', name: 'querydsl-jpa', version: "$queryDslVersion"
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
+
+    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: "$okhttpVersion"
+    implementation group: 'com.querydsl', name: 'querydsl-jpa', version: "$queryDslVersion"
+
+    implementation group: 'com.squareup.retrofit2', name: 'retrofit', version: "$retrofitVersion"
+    implementation group: 'com.squareup.retrofit2', name: 'converter-gson', version: "$retrofitVersion"
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
+    implementation group: 'com.google.api-client', name: 'google-api-client', version: '1.30.9'
+
+
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+    implementation group: 'org.apache.commons', name: 'commons-email', version: '1.5'
+
+    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.7.0'
+    implementation "org.apache.poi:poi-ooxml:4.0.0"
+
+
+    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '2.10.1'
+    implementation 'com.auth0:java-jwt:3.18.2'
+
+
+
+    testImplementation(project(":${projectName}-test-starter"))
+    testImplementation(project(":${projectName}-infrastructure"))
+    testImplementation(project(":${projectName}-integration-impl"))
+    implementation(project(":${projectName}-integration"))
+    // https://mvnrepository.com/artifact/org.threeten/threetenbp
+    implementation group: 'org.threeten', name: 'threetenbp', version: '1.4.4'
+// https://mvnrepository.com/artifact/com.google.firebase/firebase-admin
+    implementation group: 'com.google.firebase', name: 'firebase-admin', version: '7.1.0'
+
+}
+
+//jacocoTestCoverageVerification {
+//    violationRules {
+//        rule {
+//            element = 'BUNDLE'
+//            limit {
+//                minimum = 0.12
+//                maximum = 0.15
+//            }
+//        }
+//    }
+//}
+//check.dependsOn jacocoTestCoverageVerification
