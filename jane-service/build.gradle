@@ -1,0 +1,15 @@
+dependencies {
+
+    implementation(project(":${projectName}-domain"))
+
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    // https://mvnrepository.com/artifact/com.google.firebase/firebase-admin
+    implementation group: 'com.google.firebase', name: 'firebase-admin', version: '7.1.0'
+    implementation group: 'com.squareup.retrofit2', name: 'retrofit', version: "$retrofitVersion"
+    implementation group: 'com.squareup.retrofit2', name: 'converter-gson', version: "$retrofitVersion"
+    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.7.0'
+    // https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt
+    implementation group: 'com.nimbusds', name: 'nimbus-jose-jwt', version: '7.5.1'
+    implementation group: 'com.querydsl', name: 'querydsl-jpa', version: "$queryDslVersion"
+}
