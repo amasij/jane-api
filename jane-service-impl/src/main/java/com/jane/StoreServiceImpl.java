@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Named;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Named
@@ -31,6 +33,7 @@ public class StoreServiceImpl implements StoreService {
     private final StateRepository stateRepository;
     private final GpsRepository gpsRepository;
     private final AppRepository appRepository;
+    private final StoreScheduleRepository storeScheduleRepository;
     @Autowired
     @StoreCodeSequence
     private SequenceGenerator sequenceGenerator;
@@ -38,7 +41,7 @@ public class StoreServiceImpl implements StoreService {
 
     @Transactional
     @Override
-    public StoreCreationPojo createStore(StoreCreationDto dto) {
+    public List<StorePojo> createStore(StoreCreationDto dto) {
         Store store = new Store();
         store.setCode(sequenceGenerator.getNext());
         store.setName(dto.getName());
@@ -48,18 +51,33 @@ public class StoreServiceImpl implements StoreService {
         store.setImage(imageRepository.findById(dto.getLogoId())
                 .orElseThrow(() -> new ErrorResponse(HttpStatus.BAD_REQUEST, "Logo not found")));
         Store savedStore = storeRepository.save(store);
-        return new StoreCreationPojo(savedStore.getId());
+        createStoreSchedule(savedStore, dto);
+        return transform(Collections.singletonList(savedStore));
     }
 
+    private void createStoreSchedule(Store store, StoreCreationDto dto) {
+        List<StoreSchedule> storeSchedules = dto.getSchedules().stream().map(x -> {
+            StoreSchedule storeSchedule = new StoreSchedule();
+            storeSchedule.setStore(store);
+            storeSchedule.setStatus(GenericStatusConstant.ACTIVE);
+            storeSchedule.setClose(x.getClose());
+            storeSchedule.setOpen(x.getOpen());
+            storeSchedule.setDay(x.getDay());
+            return storeSchedule;
+        }).collect(Collectors.toList());
+        storeScheduleRepository.saveAll(storeSchedules);
+    }
+
+    @Transactional
     @Override
     public QueryResultsPojo<StorePojo> getStores(StoreFilter filter) {
         JPAQuery<Store> jpaQuery = appRepository.startJPAQuery(QStore.store)
                 .innerJoin(QStore.store.address).fetchJoin()
                 .where(QStore.store.status.eq(GenericStatusConstant.ACTIVE));
-        filter.getName().ifPresent(x -> jpaQuery.where(QStore.store.name.equalsIgnoreCase(x)));
-        filter.getStateCode().ifPresent(x -> jpaQuery.where(QStore.store.address.state.code.eq(x)));
-        jpaQuery.limit(filter.getLimit().orElse(10L))
-                .offset(filter.getOffset().orElse(0L))
+        Optional.ofNullable(filter.getName()).ifPresent(x -> jpaQuery.where(QStore.store.name.containsIgnoreCase(x)));
+        Optional.ofNullable(filter.getStateCode()).ifPresent(x -> jpaQuery.where(QStore.store.address.state.code.eq(x)));
+        jpaQuery.limit(Optional.ofNullable(filter.getLimit()).orElse(10L))
+                .offset(Optional.ofNullable(filter.getOffset()).orElse(0L))
                 .orderBy(QStore.store.name.asc());
         QueryResults<Store> results = jpaQuery.fetchResults();
         return new QueryResultsPojo<>(results.getLimit(), results.getOffset(), results.getTotal(), transform(results.getResults()));
@@ -79,6 +97,7 @@ public class StoreServiceImpl implements StoreService {
             Gps gps = gpsList.stream().filter(g -> g.getId().equals(x.getAddress().getGps().getId())).findFirst().orElse(null);
             State state = states.stream().filter(s -> s.getId().equals(x.getAddress().getState().getId())).findFirst().orElse(null);
             StorePojo pojo = new StorePojo();
+            pojo.setName(x.getName());
             pojo.setCode(x.getCode());
             pojo.setGps(gps);
             pojo.setState(state);

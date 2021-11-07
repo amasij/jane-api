@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.jane.constants.Constants;
 import com.jane.exception.ErrorResponse;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -30,19 +31,18 @@ import java.util.Map;
 public class UserServiceImpl implements UserService {
     private final SettingService settingService;
     Algorithm algorithm;
-    private String TOKEN_SECRET;
     private String HOST;
 
     @PostConstruct
-    private void init(){
-        TOKEN_SECRET = settingService.getString("TOKEN_SECRET", BCrypt.gensalt());
-        HOST = settingService.getString("HOST", "localhost");
+    private void init() {
+        String TOKEN_SECRET = settingService.getString(Constants.TOKEN_SECRET, BCrypt.gensalt());
+        HOST = settingService.getString(Constants.HOST, "localhost");
         algorithm = Algorithm.HMAC256(TOKEN_SECRET);
     }
 
     @Override
     public String createToken(String subject, Map<String, Object> claimSet) {
-        return createToken(HOST,subject,claimSet);
+        return createToken(HOST, subject, claimSet);
     }
 
     @Override
@@ -51,8 +51,9 @@ public class UserServiceImpl implements UserService {
             JWTVerifier verifier = JWT.require(algorithm).withIssuer(HOST).build();
             DecodedJWT jwt = verifier.verify(token);
             return jwt.getSubject();
-        } catch (JWTVerificationException exception){
-           throw new ErrorResponse(HttpStatus.UNAUTHORIZED,"Unauthorized");
+        } catch (JWTVerificationException exception) {
+            exception.printStackTrace();
+            throw new ErrorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
     }
 

@@ -1,6 +1,7 @@
 package com.jane.controllers;
 
 import com.jane.AppRepository;
+import com.jane.OtpService;
 import com.jane.PhoneNumberService;
 import com.jane.entity.Customer;
 import com.jane.entity.QCustomer;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ResourceController {
     private final AppRepository appRepository;
     private final PhoneNumberService phoneNumberService;
+    private final OtpService otpService;
 
     @GetMapping("/validate-customer/{type}/{identifier}")
     public ResponseEntity<String> validate(@PathVariable("type") ResourceValidationType type,
@@ -41,5 +43,11 @@ public class ResourceController {
             return ResponseEntity.ok("Valid");
         }
         throw new ErrorResponse(HttpStatus.BAD_REQUEST, type.name() + " already exists");
+    }
+
+    @GetMapping("/send-otp/{phoneNumber}")
+    public ResponseEntity<String> sendOtp(@PathVariable String phoneNumber) {
+        return ResponseEntity.ok(otpService.sendOtp(phoneNumber) ? "SENT" : "NOT SENT");
+
     }
 }

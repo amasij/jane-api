@@ -6,6 +6,7 @@ import lombok.Setter;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -29,6 +30,6 @@ public class ProductCreationDto {
     private String description;
 
     @NotNull(message = "Image IDs cannot be empty")
-    @Min(value = 1,message = "Upload at least one image")
+    @Size(min = 1,message = "Upload at least one image")
     private List<Long> imageIds;
 }

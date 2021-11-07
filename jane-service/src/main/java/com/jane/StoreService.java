@@ -9,6 +9,6 @@ import com.jane.pojo.StorePojo;
 import java.util.List;
 
 public interface StoreService {
-    StoreCreationPojo createStore(StoreCreationDto dto);
+    List<StorePojo> createStore(StoreCreationDto dto);
     QueryResultsPojo<StorePojo> getStores(StoreFilter filter);
 }

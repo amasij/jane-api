@@ -8,10 +8,10 @@ import java.util.Optional;
 @Getter
 @Setter
 public class StoreFilter {
-    private Optional<Long> limit;
-    private Optional<Long> offset;
-    private Optional<String> name;
-    private Optional<String> latitude;
-    private Optional<String> longitude;
-    private Optional<String> stateCode;
+    private Long limit;
+    private Long offset;
+    private String name;
+    private String latitude;
+    private String longitude;
+    private String stateCode;
 }

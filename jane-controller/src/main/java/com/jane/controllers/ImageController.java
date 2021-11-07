@@ -34,7 +34,7 @@ public class ImageController {
                                              long id, HttpServletResponse response) throws IOException {
         Image image = imageRepository.findById(id).orElseThrow(() -> new ErrorResponse(HttpStatus.NOT_FOUND, "File not found"));
         response.setContentType(image.getContentType());
-        IOUtils.write(String.valueOf(image.getData()), response.getOutputStream());
+        IOUtils.write(image.getData(), response.getOutputStream());
         response.flushBuffer();
         return null;
     }

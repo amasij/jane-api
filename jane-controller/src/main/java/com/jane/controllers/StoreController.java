@@ -21,8 +21,8 @@ public class StoreController {
     private final StoreService storeService;
 
     @PostMapping("/create")
-    public ResponseEntity<StoreCreationPojo> createStore(@RequestBody @Valid StoreCreationDto dto) {
-        return ResponseEntity.ok(storeService.createStore(dto));
+    public ResponseEntity<StorePojo> createStore(@RequestBody @Valid StoreCreationDto dto) {
+        return ResponseEntity.ok(storeService.createStore(dto).get(0));
     }
 
     @GetMapping("/search")

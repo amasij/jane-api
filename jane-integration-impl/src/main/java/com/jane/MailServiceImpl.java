@@ -47,7 +47,7 @@ public class MailServiceImpl implements MailService {
     public void send(Email email) {
         String emailAddress = settingService.getString(NOTIFICATION_EMAIL_ADDRESS, "simonjoseph750@gmail.com");
         String emailPassword = settingService.getString(NOTIFICATION_EMAIL_PASSWORD, "ssjj44rriill..");
-        Integer smtpPort = settingService.getInteger("SMTP_PORT", 465);
+        Integer smtpPort = settingService.getInteger("SMTP_PORT", 587);
         String smtpHost = settingService.getString("SMTP_HOST", "smtp.gmail.com");
         String fromEmail = settingService.getString(EMAIL_SENDER_FROM_EMAIL, "noreply@jane.com");
         String fromName = settingService.getString(EMAIL_SENDER_FROM_NAME, "JANE Inc");
@@ -56,9 +56,7 @@ public class MailServiceImpl implements MailService {
             email.setHostName(smtpHost);
             email.setSmtpPort(smtpPort);
             email.setAuthenticator(new DefaultAuthenticator(emailAddress, emailPassword));
-
             email.setFrom(fromEmail, fromName);
-
             email.setSSLOnConnect(true);
             email.setStartTLSEnabled(true);
             email.send();

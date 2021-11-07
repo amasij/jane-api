@@ -94,6 +94,8 @@ public class AccessConstraintHandlerInterceptor extends HandlerInterceptorAdapte
                 unAuthorize(response);
                 return false;
             } catch (Exception e) {
+                e.printStackTrace();
+                unAuthorize(response);
                 return false;
             }
         }

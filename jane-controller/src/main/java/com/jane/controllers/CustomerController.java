@@ -3,6 +3,8 @@ package com.jane.controllers;
 import com.jane.CustomerService;
 import com.jane.dto.CustomerCreationDto;
 import com.jane.dto.CustomerLoginDto;
+import com.jane.dto.CustomerPasswordUpdateDto;
+import com.jane.dto.CustomerUpdateDto;
 import com.jane.pojo.CustomerPojo;
 import com.jane.security.constraint.Public;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +31,18 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.loginCustomer(dto));
     }
 
+    @PostMapping("/update/{id}")
+    public ResponseEntity<CustomerPojo> update(@RequestBody @Valid CustomerUpdateDto dto, @PathVariable("id") Long id) {
+        return ResponseEntity.ok(customerService.updateCustomer(id, dto));
+    }
+
+    @PostMapping("/update-password/{id}")
+    public ResponseEntity<CustomerPojo> updatePassword(@RequestBody @Valid CustomerPasswordUpdateDto dto, @PathVariable("id") Long id) {
+        return ResponseEntity.ok(customerService.updateCustomerPassword(id, dto));
+    }
+
     @GetMapping("/details/{id}")
-    public ResponseEntity<CustomerPojo> getCustomer(@PathVariable("id") Long id){
+    public ResponseEntity<CustomerPojo> getCustomer(@PathVariable("id") Long id) {
         return ResponseEntity.ok(customerService.getCustomer(id));
     }
 }
