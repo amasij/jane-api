@@ -11,13 +11,15 @@ import java.util.List;
 @Getter
 @Setter
 public class OrderCreationDto {
-    @NotNull List< @Valid ProductQuantityDto> productsQuantities;
-    @NotNull
-    private Long deductibleHashId;
+    @NotNull List<@Valid ProductQuantityDto> productsQuantities;
+    @NotBlank
+    private String deductibleHashToken;
     @NotBlank
     private String longitude;
     @NotBlank
     private String latitude;
+    @NotBlank
+    private String storeCode;
     @NotBlank
     private String stateCode;
     @NotBlank

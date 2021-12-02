@@ -8,6 +8,6 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 public class DeliveryCostEstimatePojo {
-    private Long amount;
-    private Long deductibleHashId;
+    private Long amountInKobo;
+    private String deductibleHashToken;
 }

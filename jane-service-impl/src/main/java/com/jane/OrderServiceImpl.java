@@ -22,6 +22,8 @@ import java.math.MathContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Named
@@ -38,6 +40,7 @@ public class OrderServiceImpl implements OrderService {
     private final StateRepository stateRepository;
     private final AddressRepository addressRepository;
     private final GpsRepository gpsRepository;
+    private final PhoneNumberService phoneNumberService;
     private final OrderItemSubstituteRepository orderItemSubstituteRepository;
 
     @Transactional
@@ -46,31 +49,36 @@ public class OrderServiceImpl implements OrderService {
         Customer customer = getCustomer(customerId);
         DeductibleHash deductibleHash = createDeductibleHash(customer, dto);
         DeliveryCostEstimatePojo pojo = new DeliveryCostEstimatePojo();
-        pojo.setAmount(deductibleHash.getDeductible());
-        pojo.setDeductibleHashId(deductibleHash.getId());
+        pojo.setAmountInKobo(deductibleHash.getDeductible());
+        pojo.setDeductibleHashToken(deductibleHash.getToken());
         return pojo;
+    }
+
+    private Long getDeliveryCost(Customer customer, DeliveryCostEstimateDto dto) {
+        return 1000000L;
     }
 
     private DeductibleHash createDeductibleHash(Customer customer, DeliveryCostEstimateDto dto) {
         DeductibleHash deductibleHash = new DeductibleHash();
-        deductibleHash.setDeductible(1000000L);
+        deductibleHash.setDeductible(getDeliveryCost(customer, dto));
         deductibleHash.setDateCreated(LocalDateTime.now());
-        deductibleHash.setToken("");
+        deductibleHash.setToken(UUID.randomUUID().toString());
         return deductibleHashRepository.save(deductibleHash);
     }
 
-    private DeductibleHash getDeductibleHash(Long id) {
-        return deductibleHashRepository.findById(id).orElseThrow(() -> new ErrorResponse(HttpStatus.BAD_REQUEST, "Hash does not exist"));
+    private DeductibleHash getDeductibleHash(String token) {
+        return deductibleHashRepository.findByToken(token).orElseThrow(() -> new ErrorResponse(HttpStatus.BAD_REQUEST, "Hash does not exist"));
     }
 
     @Transactional
     @Override
     public OrderCreationPojo createOrder(Long customerId, OrderCreationDto dto) {
         Customer customer = getCustomer(customerId);
-        DeductibleHash deductibleHash = getDeductibleHash(dto.getDeductibleHashId());
+        DeductibleHash deductibleHash = getDeductibleHash(dto.getDeductibleHashToken());
+        validateDeductibleHash(customer, deductibleHash, dto);
         List<Product> products = getProducts(dto.getProductsQuantities());
         List<ProductSubPojo> substitutes = getSubProducts(products, dto.getProductsQuantities());
-        PaymentInvoice paymentInvoice = createPaymentInvoice(customer, deductibleHash, products, substitutes);
+        PaymentInvoice paymentInvoice = createPaymentInvoice(customer, deductibleHash, products, substitutes, dto.getProductsQuantities());
         Orders order = createOrder(customer, paymentInvoice, dto);
         List<OrderItem> orderItems = createOrderItems(order, products, dto.getProductsQuantities());
         createOrderItemSubstitutes(substitutes, orderItems);
@@ -78,6 +86,20 @@ public class OrderServiceImpl implements OrderService {
         pojo.setOrderId(order.getId());
         pojo.setAmountDue(paymentInvoice.getAmountInKobo());
         return pojo;
+    }
+
+    private void validateDeductibleHash(Customer customer, DeductibleHash deductibleHash, OrderCreationDto dto) {
+        List<String> productCodes = dto.getProductsQuantities().stream().map(ProductQuantityDto::getProductCode).collect(Collectors.toList());
+        productCodes.addAll(dto.getProductsQuantities().stream().filter(x -> (!Objects.isNull(x.getSubstitute()))).map(x -> x.getSubstitute().getProductCode()).collect(Collectors.toList()));
+        DeliveryCostEstimateDto deliveryCostEstimateDto = new DeliveryCostEstimateDto();
+        deliveryCostEstimateDto.setLatitude(dto.getLatitude());
+        deliveryCostEstimateDto.setLongitude(dto.getLongitude());
+        deliveryCostEstimateDto.setStoreCode(dto.getStoreCode());
+        deliveryCostEstimateDto.setProductCodes(productCodes);
+        Long deliveryCost = getDeliveryCost(customer, deliveryCostEstimateDto);
+        if (!deductibleHash.getDeductible().equals(deliveryCost)) {
+            throw new ErrorResponse(HttpStatus.BAD_REQUEST, "Invalid Deductible hash");
+        }
     }
 
     private void createOrderItemSubstitutes(List<ProductSubPojo> substitutes, List<OrderItem> orderItems) {
@@ -114,6 +136,7 @@ public class OrderServiceImpl implements OrderService {
         order.setPaymentInvoice(paymentInvoice);
         order.setEta(LocalDateTime.now().plusMinutes(45));
         order.setDetail(createOrderDetail(dto));
+//        Optional.ofNullable(dto.getInstructions()).ifPresent(x->order.set);
         return orderRepository.save(order);
     }
 
@@ -122,14 +145,14 @@ public class OrderServiceImpl implements OrderService {
         orderDetail.setIsCustomer(true);
         orderDetail.setAddress(createAddress(dto));
         orderDetail.setRecepientName(dto.getRecipientName());
-        orderDetail.setRecepientPhoneNumber(dto.getRecipientPhoneNumber());
+        orderDetail.setRecepientPhoneNumber(phoneNumberService.formatPhoneNumber(dto.getRecipientPhoneNumber()));
         return orderDetailRepository.save(orderDetail);
     }
 
-    private PaymentInvoice createPaymentInvoice(Customer customer, DeductibleHash deductibleHash, List<Product> products, List<ProductSubPojo> substitutes) {
+    private PaymentInvoice createPaymentInvoice(Customer customer, DeductibleHash deductibleHash, List<Product> products, List<ProductSubPojo> substitutes, List<ProductQuantityDto> productsQuantities) {
         PaymentInvoice paymentInvoice = new PaymentInvoice();
         paymentInvoice.setDateCreated(LocalDateTime.now());
-        paymentInvoice.setAmountInKobo(totalAmountDue(products, substitutes, deductibleHash));
+        paymentInvoice.setAmountInKobo(totalAmountDue(products, substitutes, deductibleHash, productsQuantities));
         paymentInvoice.setCustomer(customer);
         paymentInvoice.setPaymentStatus(PaymentStatusConstant.NOT_PAID);
         paymentInvoice.setStatus(GenericStatusConstant.ACTIVE);
@@ -137,12 +160,14 @@ public class OrderServiceImpl implements OrderService {
         return paymentInvoiceRepository.save(paymentInvoice);
     }
 
-    private Long totalAmountDue(List<Product> products, List<ProductSubPojo> substitutes, DeductibleHash deductibleHash) {
-        MathContext mc = new MathContext(5);
-        BigDecimal productCosts = products.stream().map(Product::getPrice).reduce(BigDecimal.valueOf(0), BigDecimal::add);
-        BigDecimal subProductCosts = substitutes.stream().map(x -> x.getSubstitute().getPrice()).reduce(BigDecimal.valueOf(0), BigDecimal::add);
-        double deductible = (deductibleHash.getDeductible() / 100) * 1.0;
-        return productCosts.add(subProductCosts).add(new BigDecimal(deductible)).divide(BigDecimal.valueOf(100), mc).longValue();
+    private Long totalAmountDue(List<Product> products, List<ProductSubPojo> substitutes, DeductibleHash deductibleHash, List<ProductQuantityDto> productsQuantities) {
+        Long productTotal = products.stream().mapToLong(product -> {
+            ProductQuantityDto pqd = productsQuantities.stream().filter(x -> x.getProductCode().equals(product.getCode())).findFirst()
+                    .orElseThrow(() -> new ErrorResponse(HttpStatus.BAD_REQUEST, "Cannot find product quantity"));
+            return product.getPriceInKobo() * pqd.getQuantity();
+        }).sum();
+        Long subProductTotal = substitutes.stream().mapToLong(x -> x.getSubstitute().getPriceInKobo() * x.getQuantity()).sum();
+        return (deductibleHash.getDeductible()) + subProductTotal + productTotal;
     }
 
     private Address createAddress(OrderCreationDto dto) {
@@ -152,6 +177,7 @@ public class OrderServiceImpl implements OrderService {
         address.setStatus(GenericStatusConstant.ACTIVE);
         address.setDateCreated(LocalDateTime.now());
         address.setGps(createGps(dto));
+        address.setState(state);
         return addressRepository.save(address);
     }
 
